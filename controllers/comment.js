@@ -1,5 +1,15 @@
 const Comment = require("../models/comment");
 
+const fetchReplies = async (commentId) => {
+  const replies = await Comment.find({ parentCommentId: commentId })
+    .sort({ createdAt: -1 })
+    .lean();
+  for (let reply of replies) {
+    reply.replies = await fetchReplies(reply._id);
+  }
+  return replies;
+};
+
 const handleCreateComment = async (req, res) => {
   const { postId } = req.params;
   const { text } = req.body;
@@ -45,11 +55,7 @@ const handleGetCommentForAPost = async (req, res) => {
       .lean();
 
     for (let comment of comments) {
-      const replies = await Comment.find({ parentCommentId: comment._id })
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .lean();
-      comment.replies = replies;
+      comment.replies = await fetchReplies(comment._id);
       comment.totalReplies = await Comment.countDocuments({
         parentCommentId: comment._id,
       });
@@ -57,26 +63,26 @@ const handleGetCommentForAPost = async (req, res) => {
 
     res.json(comments);
   } catch (err) {
-    res.status(500).send("Internal Server error");
+    res
+      .status(500)
+      .json({ error: "An error occurred while fetching comments" });
   }
 };
 
 const handleExpandCommentWithPagination = async (req, res) => {
   const { postId, commentId } = req.params;
-  const { page = 1, pageSize = 10 } = req.query;
+  const { page = 1, pageSize = 1 } = req.query;
 
   try {
-    const comments = await Comment.find({ postId, parentCommentId: commentId })
+    // Fetch the top-level comments (comments with no parentCommentId)
+    const comments = await Comment.find({ postId, parentCommentId: null })
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .lean();
 
+    // For each top-level comment, fetch its nested replies
     for (let comment of comments) {
-      const replies = await Comment.find({ parentCommentId: comment._id })
-        .sort({ createdAt: -1 })
-        .limit(2)
-        .lean();
-      comment.replies = replies;
+      comment.replies = await fetchReplies(comment._id);
       comment.totalReplies = await Comment.countDocuments({
         parentCommentId: comment._id,
       });
@@ -84,7 +90,7 @@ const handleExpandCommentWithPagination = async (req, res) => {
 
     res.json(comments);
   } catch (err) {
-    res.status(500).send("Interal Server error");
+    res.status(500).send("Server error");
   }
 };
 

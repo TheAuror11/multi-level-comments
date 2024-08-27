@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { verifyToken } = require("../services/auth");
 
 const jwtAuthMiddleware = (req, res, next) => {
   // first check request headers has authorization or not
@@ -11,7 +12,7 @@ const jwtAuthMiddleware = (req, res, next) => {
 
   try {
     // Verify the JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = verifyToken(token);
 
     // Attach user information to the request object
     req.user = decoded;

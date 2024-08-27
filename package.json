@@ -1,7 +1,7 @@
 {
   "name": "multi-level-comments",
   "version": "1.0.0",
-  "description": "",
+  "description": "API Documentation Link - https://www.apidog.com/apidoc/shared-31ceb929-8f0a-44e6-bf37-e553e141293e",
   "main": "index.js",
   "scripts": {
     "test": "mocha tests/**/*.test.js",

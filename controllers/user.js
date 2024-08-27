@@ -1,4 +1,4 @@
-const generateToken = require("../services/auth");
+const { generateToken } = require("../services/auth");
 const User = require("../models/user");
 
 const handleSignup = async (req, res) => {
